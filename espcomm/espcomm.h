@@ -82,5 +82,6 @@ int espcomm_start_app(int reboot);
 bool espcomm_reset();
 
 bool espcomm_erase_flash();
+bool espcomm_flash_id(uint32_t *flash_id_ptr);
 
 #endif

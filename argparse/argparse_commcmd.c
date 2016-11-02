@@ -31,6 +31,10 @@
 #include "esptool_binimage.h"
 #include "espcomm.h"
 
+
+uint32_t flash_id;
+
+
 int argparse_commcmd(int num_args, char **arg_ptr)
 {
     char *cur_cmd;
@@ -117,6 +121,14 @@ int argparse_commcmd(int num_args, char **arg_ptr)
                 {
                     return 1;
                 }
+                return 0;
+
+            case 'i':
+                if (espcomm_flash_id(&flash_id))
+                {
+                    return 1;
+                }
+                printf("flash_id: 0x%x\n", flash_id);
                 return 0;
 
             default:

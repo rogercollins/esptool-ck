@@ -123,6 +123,35 @@ void board_nodemcu_ra()
     serialport_set_rts(0);
 }
 
+/* Flame Boss dev board - dtr is connected to esp-reset, rts - esp-gpio0 */
+
+void board_flameboss_rb()
+{
+	/*  self.setGPIO0(False)
+		self.setRST(True)
+		time.sleep(0.05)
+		self.setGPIO0(True)
+		self.setRST(False)
+		time.sleep(0.05)
+		self.setGPIO0(False)
+	 */
+	serialport_set_rts(0);
+	serialport_set_dtr(1);
+    espcomm_delay_ms(50);
+	serialport_set_rts(1);
+	serialport_set_dtr(0);
+    espcomm_delay_ms(50);
+	serialport_set_rts(0);
+}
+
+void board_flameboss_ra()
+{
+    serialport_set_rts(1);
+    serialport_set_dtr(0);
+    espcomm_delay_ms(5);
+    serialport_set_dtr(1);
+}
+
 /// list of all boards
 
 static espcomm_board_t s_boards[] = {
@@ -130,6 +159,7 @@ static espcomm_board_t s_boards[] = {
     { "ck",     &board_ck_rb,       &board_ck_ra    },
     { "wifio",  &board_wifio_rb,    &board_wifio_ra},
     { "nodemcu",   &board_nodemcu_rb,     &board_nodemcu_ra},
+    { "fb",   	&board_flameboss_rb,     &board_flameboss_ra},
 };
 
 static size_t s_boards_count = sizeof(s_boards) / sizeof(espcomm_board_t);
