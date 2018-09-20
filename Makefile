@@ -1,4 +1,4 @@
-CFLAGS		+= -std=gnu99 -Os -Wall
+CFLAGS		+= -std=gnu99 -g -Wall
 CXXFLAGS	+= -std=c++11 -Os -Wall
 
 
@@ -77,7 +77,7 @@ dist: $(TARGET) $(DIST_DIR)
 
 $(TARGET): $(OBJECTS)
 	$(CC) $^ -o $@ $(LDFLAGS)
-	strip $(TARGET)
+	# strip $(TARGET)
 
 $(BUILD_DIR):
 	@mkdir -p $@
@@ -86,6 +86,6 @@ $(DIST_DIR):
 	@mkdir -p $@
 
 clean:
-	@rm -f $(OBJECTS)
-	@rm -f $(TARGET)
-	@rm -rf esptool-*
+	rm -f $(OBJECTS)
+	rm -f $(TARGET)
+	rm -rf esptool-*

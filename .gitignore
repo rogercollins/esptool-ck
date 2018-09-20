@@ -1,3 +1,5 @@
+.settings
+*.o
 esptool
 esptool.exe
 build/

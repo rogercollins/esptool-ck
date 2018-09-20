@@ -48,6 +48,7 @@ static bool sync_stage = false;
 static bool upload_stage = false;
 static bool espcomm_is_open = false;
 
+static int espcomm_size = 0;  /* 0 means do not modify flash map field during programming flash */
 static const char *espcomm_port =
 #if defined(LINUX)
 "/dev/ttyUSB0";
@@ -415,6 +416,25 @@ bool espcomm_upload_mem(uint8_t* src, size_t size, const char* source_name)
         size -= write_size;
         src += write_size;
 
+        /*
+         * From esptool.py
+         * # Fix sflash config data.
+         * if address == 0 and image[0] == '\xe9':
+         *   print 'Flash params set to 0x%02x%02x' % (flash_mode, flash_size_freq)
+         *   image = image[0:2] + flash_params + image[4:]
+         */
+        if (espcomm_size != 0 && espcomm_address == 0 && count == 0 && (flash_packet[4] & 0xff) == 0xe9)
+        {
+            /* replace flash_params in header of image
+             * from esptool.py...
+             * flash_mode = {'qio':0, 'qout':1, 'dio':2, 'dout': 3}[args.flash_mode]
+             * flash_size_freq = {'4m':0x00, '2m':0x10, '8m':0x20, '16m':0x30, '32m':0x40, '16m-c1': 0x50, '32m-c1':0x60, '32m-c2':0x70}[args.flash_size]
+             * flash_params = struct.pack('BB', flash_mode, flash_size_freq)
+             */
+            LOGINFO("setting flash_parms in boot to qio, 16m");
+            flash_packet[4] = (flash_packet[4] & 0x0000ffff) | (espcomm_size << 28);
+        }
+
         send_packet.checksum = espcomm_calc_checksum((unsigned char *) (flash_packet + 4), BLOCKSIZE_FLASH);
         res = espcomm_send_command(FLASH_DOWNLOAD_DATA, (unsigned char*) flash_packet, BLOCKSIZE_FLASH + 16, 0);
 
@@ -587,6 +607,14 @@ int espcomm_start_app(int reboot)
 int espcomm_file_uploaded()
 {
     return file_uploaded;
+}
+
+int espcomm_set_size(char *size)
+{
+    int size_i = atoi(size);
+    LOGDEBUG("setting port from %s to %d", espcomm_size, size_i);
+    espcomm_size = size_i;
+    return 1;
 }
 
 int espcomm_set_port(char *port)

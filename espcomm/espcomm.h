@@ -64,6 +64,7 @@ typedef struct
 #define BLOCKSIZE_FLASH         0x0400
 #define BLOCKSIZE_RAM           0x1800
 
+int espcomm_set_size(char *size);
 int espcomm_set_port(char *port);
 int espcomm_set_baudrate(const char *baudrate);
 int espcomm_set_address(const char *address);

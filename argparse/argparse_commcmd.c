@@ -42,6 +42,16 @@ int argparse_commcmd(int num_args, char **arg_ptr)
 
         switch(*cur_cmd++)
         {
+            case 's':
+                if(num_args < 1)
+                {
+                    return 0;
+                }
+                if(espcomm_set_size(arg_ptr[0]))
+                {
+                    return 2;
+                }
+                break;
             case 'p':
                 if(num_args < 1)
                 {
