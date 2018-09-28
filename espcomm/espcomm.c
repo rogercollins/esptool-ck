@@ -612,7 +612,7 @@ int espcomm_file_uploaded()
 int espcomm_set_size(char *size)
 {
     int size_i = atoi(size);
-    LOGDEBUG("setting port from %s to %d", espcomm_size, size_i);
+    LOGDEBUG("setting flash map from %d to %d", espcomm_size, size_i);
     espcomm_size = size_i;
     return 1;
 }
@@ -729,3 +729,93 @@ bool espcomm_reset()
     espcomm_reset_to_exec();
     return true;
 }
+
+/*
+""" Write to memory address in target """
+    def write_reg(self, addr, value, mask, delay_us = 0):
+        if self.command(ESPROM.ESP_WRITE_REG,
+                struct.pack('<IIII', addr, value, mask, delay_us))[1] != "\0\0":
+            raise Exception('Failed to write target memory')
+*/
+int espcomm_write_reg(uint32_t addr, uint32_t value, uint32_t mask, uint32_t delay_us)
+{
+    int rv;
+    uint32_t data[4];
+
+    LOGDEBUG("espcomm_write_reg: addr x%x, val x%x", addr, value);
+    data[0] = addr;
+    data[1] = value;
+    data[2] = mask;
+    data[3] = delay_us;
+
+    rv = espcomm_send_command(WRITE_REGISTER, (unsigned char *)&data, 16, 0);
+    return rv;
+}
+
+/*
+def read_reg(self, addr):
+        res = self.command(ESPROM.ESP_READ_REG, struct.pack('<I', addr))
+        if res[1] != "\0\0":
+            raise Exception('Failed to read target memory')
+        return res[0] */
+int espcomm_read_reg(uint32_t addr, uint32_t *p_val)
+{
+    uint32_t response;
+
+    response = (uint32_t)espcomm_send_command(READ_REGISTER, (unsigned char *)&addr, 4, 0);
+    if (receive_packet.size != 2)
+    {
+        printf("read_reg bad size\n");
+        return 0;
+    }
+    if (receive_packet.data[0] != '\0' ||
+            receive_packet.data[1] != '\0')
+    {
+        printf("read_reg bad status\n");
+        return 0;
+    }
+    *p_val = response;
+    LOGDEBUG("espcomm_read_reg: addr x%x, val x%x", addr, *p_val);
+    return 1;
+}
+
+
+/*
+ *  """ Read SPI flash manufacturer and device id """
+    def flash_id(self):
+        self.flash_begin(0, 0)
+        self.write_reg(0x60000240, 0x0, 0xffffffff)
+        self.write_reg(0x60000200, 0x10000000, 0xffffffff)
+        flash_id = esp.read_reg(0x60000240)
+        self.flash_finish(False)
+        return flash_id
+ */
+bool espcomm_flash_id(uint32_t *flash_id_ptr)
+{
+    uint32_t res;
+
+    if (espcomm_open())
+    {
+        espcomm_start_flash(0, 0);
+
+        res = espcomm_write_reg(0x60000240, 0, 0xffffffff, 0);
+        if (res == 0)
+        {
+            return false;
+        }
+        res = espcomm_write_reg(0x60000200, 0x10000000, 0xffffffff, 0);
+        if (res == 0)
+        {
+            return false;
+        }
+        res = espcomm_read_reg(0x60000240, flash_id_ptr);
+        if (res == 0)
+        {
+            return false;
+        }
+        printf("Manufacturer: %x\n", *flash_id_ptr & 0xFF);
+        printf("Device: %x\n", (*flash_id_ptr & 0xFF00) | (*flash_id_ptr >> 16));
+    }
+    return true;
+}
+
